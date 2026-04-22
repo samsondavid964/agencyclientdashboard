@@ -1,20 +1,40 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { login, requestOtpSignIn } from "@/lib/actions/auth";
+import { login } from "@/lib/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { useSearchParams } from "next/navigation";
 
+const ALLOWED_ERRORS = new Set([
+  "Please enter your email and password.",
+  "Invalid email or password.",
+  "Could not send verification code. Please try again.",
+  "Could not start sign-in. Please try again.",
+  "Something went wrong. Please try again.",
+  "Email is required.",
+  "Too many attempts. Please try again later.",
+  "Your session has expired. Please sign in again.",
+]);
+
+const ALLOWED_MESSAGES = new Set([
+  "Password updated. Please sign in.",
+]);
+
 export default function LoginClient() {
   const searchParams = useSearchParams();
-  const error = searchParams.get("error") ?? undefined;
-  const message = searchParams.get("message") ?? undefined;
 
-  const [email, setEmail] = useState("");
+  const rawError = searchParams.get("error");
+  const rawMessage = searchParams.get("message");
+
+  const error = rawError
+    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
+    : undefined;
+  const message = rawMessage
+    ? (ALLOWED_MESSAGES.has(rawMessage) ? rawMessage : undefined)
+    : undefined;
 
   return (
     <div className="flex min-h-screen">
@@ -69,7 +89,7 @@ export default function LoginClient() {
               Welcome back
             </h1>
             <p className="text-sm text-muted-foreground">
-              Sign in to your account to continue
+              Enter your email and password to sign in.
             </p>
           </div>
 
@@ -99,74 +119,43 @@ export default function LoginClient() {
             </div>
           )}
 
-          {/* Shared email field */}
-          <div className="space-y-2 stagger-1">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
-              spellCheck={false}
-              placeholder="you@ad-lab.io"
-              required
-            />
-          </div>
-
-          <div className="space-y-4">
-            {/* Password sign-in */}
-            <form action={login} className="space-y-3 stagger-2">
-              <input type="hidden" name="email" value={email} />
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="Your password"
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
-              <SubmitButton className="w-full" pendingText="Signing in...">
-                Sign In
-              </SubmitButton>
-            </form>
-
-            {/* Divider */}
-            <div className="relative stagger-3">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">or</span>
-              </div>
+          <form action={login} className="space-y-4">
+            <div className="space-y-2 stagger-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                spellCheck={false}
+                placeholder="you@ad-lab.io"
+                required
+              />
             </div>
+            <div className="space-y-2 stagger-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            <SubmitButton className="w-full stagger-3" pendingText="Signing in…">
+              Sign in
+            </SubmitButton>
+          </form>
 
-            {/* OTP sign-in */}
-            <form action={requestOtpSignIn} className="stagger-4">
-              <input type="hidden" name="email" value={email} />
-              <SubmitButton
-                variant="outline"
-                className="w-full"
-                pendingText="Sending code..."
-              >
-                Email me a sign-in code
-              </SubmitButton>
-            </form>
-          </div>
-
-          <p className="text-center text-sm text-muted-foreground stagger-5">
+          <p className="text-center text-sm text-muted-foreground stagger-4">
             Don&apos;t have an account?{" "}
             <Link href="/signup" className="font-medium text-primary hover:underline">
               Sign up

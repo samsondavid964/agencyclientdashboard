@@ -51,6 +51,13 @@ export default async function RootLayout({
   const hasSession = cookieStore.getAll().some((c) =>
     c.name.startsWith("sb-") && c.name.endsWith("-auth-token")
   );
+  // A session is only "full" when it's not awaiting a second factor and not
+  // in a recovery/reset-password flow. Either pending state means the user
+  // can only reach /auth/verify or /auth/reset-password, so we must NOT
+  // render the authenticated shell around them.
+  const inPartialAuth =
+    cookieStore.has("pending_2fa") || cookieStore.has("recovery_verified");
+  const isFullyAuthenticated = hasSession && !inPartialAuth;
 
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
@@ -68,7 +75,7 @@ export default async function RootLayout({
 
         <ThemeProvider>
           <TooltipProvider delayDuration={0}>
-            {hasSession ? (
+            {isFullyAuthenticated ? (
               <SidebarProvider>
                 <PageTitleProvider>
                   <DashboardShell>{children}</DashboardShell>
@@ -92,26 +99,19 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
   const { Sidebar, getSidebarUserData } = await import("@/components/layout/sidebar");
   const { Header } = await import("@/components/layout/header");
   const { MobileSidebar } = await import("@/components/layout/mobile-sidebar");
-  const { getAlertCountForDate } = await import("@/lib/queries/clients");
-  const { format, subDays } = await import("date-fns");
 
-  const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
-  const [userData, alertCount] = await Promise.all([
-    getSidebarUserData(),
-    getAlertCountForDate(yesterday),
-  ]);
+  const userData = await getSidebarUserData();
 
   return (
     <div className="flex h-full">
       <Sidebar />
       <MobileSidebar {...userData} />
       <div className="flex flex-1 flex-col transition-[padding-left] duration-200 ease-in-out lg:pl-[var(--sidebar-width)]">
-        <Suspense fallback={<div className="h-[72px] border-b bg-background" />}>
+        <Suspense fallback={<div className="h-14 border-b bg-background" />}>
           <Header
             userInitials={userData.userInitials}
             avatarUrl={userData.avatarUrl}
             isAdmin={userData.isAdmin}
-            alertCount={alertCount}
           />
         </Suspense>
         <main

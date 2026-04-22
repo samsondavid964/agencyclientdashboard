@@ -30,16 +30,6 @@ export default function ForbiddenPage() {
         <Button asChild size="sm" variant="outline">
           <Link href="/">Back to dashboard</Link>
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() =>
-            (window.location.href =
-              "mailto:admin@ad-lab.io?subject=Access%20Request")
-          }
-        >
-          Contact Admin
-        </Button>
       </div>
     </div>
   );

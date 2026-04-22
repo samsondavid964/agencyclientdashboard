@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { cn } from "@/lib/utils";
+import { StepIndicator } from "@/components/auth/step-indicator";
 
 export const metadata: Metadata = {
   title: "Forgot password",
@@ -16,24 +16,18 @@ type Props = {
   searchParams: Promise<{ error?: string }>;
 };
 
-function StepIndicator({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center justify-center gap-1.5 mb-6">
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "h-1.5 rounded-full transition-all duration-300",
-            i < current ? "w-6 bg-primary" : i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
-          )}
-        />
-      ))}
-    </div>
-  );
-}
+const ALLOWED_ERRORS = new Set([
+  "Email is required.",
+  "Could not send reset code. Please try again.",
+  "Too many attempts. Please try again later.",
+  "Something went wrong. Please try again.",
+]);
 
 export default async function ForgotPasswordPage({ searchParams }: Props) {
-  const { error } = await searchParams;
+  const { error: rawError } = await searchParams;
+  const error = rawError
+    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
+    : undefined;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background bg-grid">
@@ -57,6 +51,7 @@ export default async function ForgotPasswordPage({ searchParams }: Props) {
             {error}
           </div>
         )}
+
 
         <form action={requestPasswordReset} className="space-y-4">
           <div className="space-y-2">

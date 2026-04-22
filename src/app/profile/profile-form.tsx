@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { updateProfile, uploadAvatar } from "@/lib/actions/profile";
 import { getInitials } from "@/lib/utils/initials";
+import PasswordChangeForm from "./password-change-form";
 
 interface ProfileFormProps {
   initialUser: {
@@ -205,6 +206,12 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
             />
           </div>
         </div>
+      </div>
+
+      {/* Security Section */}
+      <div className="rounded-lg border bg-card p-6">
+        <h2 className="text-lg font-semibold mb-4">Security</h2>
+        <PasswordChangeForm />
       </div>
     </div>
   );

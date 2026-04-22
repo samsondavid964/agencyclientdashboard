@@ -7,32 +7,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft } from "lucide-react";
 import { SubmitButton } from "@/components/forms/submit-button";
-import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { StepIndicator } from "@/components/auth/step-indicator";
 
-function StepIndicator({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center justify-center gap-1.5 mb-6">
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "h-1.5 rounded-full transition-all duration-300",
-            i < current ? "w-6 bg-primary" : i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
-          )}
-        />
-      ))}
-    </div>
-  );
-}
+const ALLOWED_ERRORS = new Set<string>([
+  "Password must be at least 12 characters.",
+  "Password is too long.",
+  "Password must include a mix of upper, lower, digits, and symbols.",
+  "This password is too common. Please choose another.",
+  "Password cannot include your email address.",
+  "Password cannot include your name.",
+  "Password cannot be a single repeated character.",
+  "This password has appeared in known data breaches. Please choose another.",
+  "Password does not meet requirements.",
+  "Passwords do not match.",
+  "Password update failed. Please try again.",
+  "Something went wrong. Please try again.",
+  "Session expired. Please start the reset flow again.",
+  "Session expired. Please request a new reset link.",
+  "Too many attempts. Please try again later.",
+]);
 
 export default function ResetPasswordClient() {
   const searchParams = useSearchParams();
-  const error = searchParams.get("error") ?? undefined;
+  const rawError = searchParams.get("error");
+  const error = rawError
+    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
+    : undefined;
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const mismatch = confirm.length > 0 && password !== confirm;
+  const tooShort = password.length > 0 && password.length < 12;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background bg-grid">
@@ -64,14 +70,17 @@ export default function ResetPasswordClient() {
               id="password"
               name="password"
               type="password"
-              placeholder="Min 6 characters"
-              minLength={6}
+              placeholder="Min 12 characters"
+              minLength={12}
               required
               autoFocus
               autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {tooShort && (
+              <p className="text-sm text-destructive">Password must be at least 12 characters</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -81,7 +90,7 @@ export default function ResetPasswordClient() {
               name="confirm_password"
               type="password"
               placeholder="Confirm your password"
-              minLength={6}
+              minLength={12}
               required
               autoComplete="new-password"
               value={confirm}
@@ -96,7 +105,7 @@ export default function ResetPasswordClient() {
           <SubmitButton
             className="w-full"
             pendingText="Updating…"
-            disabled={!password || !confirm || mismatch}
+            disabled={!password || !confirm || mismatch || tooShort}
           >
             Update Password
           </SubmitButton>

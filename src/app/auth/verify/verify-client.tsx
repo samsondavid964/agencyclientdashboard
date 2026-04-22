@@ -1,14 +1,29 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useActionState } from "react";
 import Link from "next/link";
-import { verifyOtp, requestOtpSignIn } from "@/lib/actions/auth";
+import { verifyOtp, sendOtpCode } from "@/lib/actions/auth";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { cn } from "@/lib/utils";
 import { useSearchParams } from "next/navigation";
+import { StepIndicator } from "@/components/auth/step-indicator";
+
+type VerifyFlowType = "signup" | "magiclink" | "recovery";
+
+type VerifyClientProps = {
+  email: string;
+  type: VerifyFlowType;
+};
+
+const ALLOWED_ERRORS = new Set<string>([
+  "Please enter the verification code.",
+  "Verification failed. Please try again.",
+  "Something went wrong. Please try again.",
+  "Too many attempts. Please try again later.",
+]);
 
 const TYPE_LABELS: Record<string, { title: string; description: string }> = {
   signup: {
@@ -21,25 +36,10 @@ const TYPE_LABELS: Record<string, { title: string; description: string }> = {
   },
   recovery: {
     title: "Reset Your Password",
-    description: "Enter the 8-digit code we sent to your email to reset your password.",
+    description:
+      "Enter the 8-digit code from the email we sent, or click the reset link in that email to continue.",
   },
 };
-
-function StepIndicator({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center justify-center gap-1.5 mb-6">
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={cn(
-            "h-1.5 rounded-full transition-all duration-300",
-            i < current ? "w-6 bg-primary" : i === current ? "w-6 bg-primary" : "w-1.5 bg-muted-foreground/30"
-          )}
-        />
-      ))}
-    </div>
-  );
-}
 
 function OtpInput({ value, onChange }: { value: string; onChange: (val: string) => void }) {
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
@@ -87,16 +87,20 @@ function OtpInput({ value, onChange }: { value: string; onChange: (val: string) 
   );
 }
 
-export default function VerifyClient() {
+export default function VerifyClient({ email, type }: VerifyClientProps) {
   const searchParams = useSearchParams();
-  const email = searchParams.get("email") ?? "";
-  const type = searchParams.get("type") ?? "signup";
-  const error = searchParams.get("error") ?? undefined;
+
+  const rawError = searchParams.get("error");
+  const error = rawError
+    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
+    : undefined;
 
   const labels = TYPE_LABELS[type] ?? TYPE_LABELS.signup;
 
   const [otpValue, setOtpValue] = useState("");
   const [cooldown, setCooldown] = useState(60);
+
+  const [resendState, resendAction, resendPending] = useActionState(sendOtpCode, null);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -104,11 +108,12 @@ export default function VerifyClient() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  const handleResend = async () => {
-    const formData = new FormData();
-    formData.set("email", email);
-    await requestOtpSignIn(formData);
-  };
+  // Reset cooldown after a confirmed successful resend
+  useEffect(() => {
+    if (resendState?.success) {
+      setCooldown(60);
+    }
+  }, [resendState]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background bg-grid">
@@ -136,8 +141,22 @@ export default function VerifyClient() {
           </div>
         )}
 
+        {resendState?.message && (
+          <div
+            role="status"
+            aria-live="polite"
+            className={cn(
+              "rounded-md border p-3 text-sm",
+              resendState.success
+                ? "border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950 dark:text-green-400"
+                : "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400"
+            )}
+          >
+            {resendState.message}
+          </div>
+        )}
+
         <form action={verifyOtp} className="space-y-4">
-          <input type="hidden" name="email" value={email} />
           <input type="hidden" name="type" value={type} />
           <input type="hidden" name="token" value={otpValue} />
 
@@ -155,18 +174,21 @@ export default function VerifyClient() {
           </SubmitButton>
         </form>
 
-        {/* Resend option for magic link sign-in */}
-        {type === "magiclink" && email && (
+        {/* Resend option for sign-in and recovery flows */}
+        {(type === "magiclink" || type === "recovery") && email && (
           <div className="text-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              disabled={cooldown > 0}
-              onClick={() => { handleResend(); setCooldown(60); }}
-              className="text-sm text-muted-foreground"
-            >
-              {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
-            </Button>
+            <form action={resendAction}>
+              <input type="hidden" name="type" value={type} />
+              <Button
+                type="submit"
+                variant="ghost"
+                size="sm"
+                disabled={cooldown > 0 || resendPending}
+                className="text-sm text-muted-foreground"
+              >
+                {cooldown > 0 ? `Resend code (${cooldown}s)` : "Resend code"}
+              </Button>
+            </form>
           </div>
         )}
 

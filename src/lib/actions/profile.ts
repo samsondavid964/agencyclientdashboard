@@ -32,12 +32,14 @@ export async function updateProfile(formData: FormData) {
     return { error: "Name is required." };
   }
 
+  const trimmed = fullName.trim().slice(0, 100);
+
   const { error } = await supabase.auth.updateUser({
-    data: { full_name: fullName.trim() },
+    data: { full_name: trimmed },
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: "Could not update profile. Please try again." };
   }
 
   revalidatePath("/", "layout");
@@ -70,7 +72,7 @@ export async function uploadAvatar(formData: FormData) {
     .upload(filePath, file, { upsert: true });
 
   if (uploadError) {
-    return { error: uploadError.message };
+    return { error: "Could not upload avatar. Please try again." };
   }
 
   const { data: urlData } = supabase.storage
@@ -85,7 +87,7 @@ export async function uploadAvatar(formData: FormData) {
   });
 
   if (updateError) {
-    return { error: updateError.message };
+    return { error: "Could not save avatar. Please try again." };
   }
 
   revalidatePath("/", "layout");
@@ -120,7 +122,7 @@ export async function uploadClientLogo(clientId: string, formData: FormData) {
     .upload(filePath, file, { upsert: true });
 
   if (uploadError) {
-    return { error: uploadError.message };
+    return { error: "Could not upload logo. Please try again." };
   }
 
   const { data: urlData } = supabase.storage
@@ -138,7 +140,7 @@ export async function uploadClientLogo(clientId: string, formData: FormData) {
     .eq("id", clientId);
 
   if (dbError) {
-    return { error: dbError.message };
+    return { error: "Could not save logo. Please try again." };
   }
 
   revalidatePath("/");

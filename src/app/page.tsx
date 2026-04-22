@@ -15,9 +15,10 @@ import { formatScore } from "@/lib/utils/formatting";
 import { EmptyState } from "@/components/ui/empty-state";
 import type { HomepageClient } from "@/lib/types/database";
 
-// Data changes once per day after workflow 2 runs (~06:00 UTC).
-// 5-minute revalidation keeps the page fresh without hammering Supabase.
-export const revalidate = 300;
+// This route is user-authenticated (reads cookies → dynamic per-request).
+// Static rendering would serve cached data across users' sessions, so we must
+// force dynamic rendering to keep client data correctly scoped.
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Dashboard",

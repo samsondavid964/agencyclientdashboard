@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { cookies } from "next/headers";
 import { checkInviteEmail, signup } from "@/lib/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,15 +15,44 @@ export const metadata: Metadata = {
 type Props = {
   searchParams: Promise<{
     step?: string;
-    email?: string;
     error?: string;
   }>;
 };
 
-export default async function SignupPage({ searchParams }: Props) {
-  const { step, email, error } = await searchParams;
+const ALLOWED_ERRORS = new Set<string>([
+  "Email is required.",
+  "Session expired. Please start again.",
+  "Password must be at least 12 characters.",
+  "Password is too long.",
+  "Password must include a mix of upper, lower, digits, and symbols.",
+  "This password is too common. Please choose another.",
+  "Password cannot include your email address.",
+  "Password cannot include your name.",
+  "Password cannot be a single repeated character.",
+  "This password has appeared in known data breaches. Please choose another.",
+  "Password does not meet requirements.",
+  "Full name is required.",
+  "Please enter your full name.",
+  "Unable to create account. Please try again.",
+  "Account setup failed. Please contact an admin.",
+  "Something went wrong. Please try again.",
+  "Too many attempts. Please try again later.",
+]);
 
-  const showConfirm = step === "confirm" && typeof email === "string" && email.length > 0;
+export default async function SignupPage({ searchParams }: Props) {
+  const { step, error: rawError } = await searchParams;
+  const error = rawError
+    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
+    : undefined;
+
+  // Email lives in the HttpOnly `signup_pending_email` cookie (set by
+  // checkInviteEmail) — never in the URL. Presence of the cookie is what
+  // gates the password/name form; without it the signup() action will fail
+  // with "Session expired" regardless.
+  const cookieStore = await cookies();
+  const pendingEmail = cookieStore.get("signup_pending_email")?.value ?? "";
+
+  const showConfirm = step === "confirm" && pendingEmail.length > 0;
   const showDenied = step === "denied";
 
   return (
@@ -84,14 +114,12 @@ export default async function SignupPage({ searchParams }: Props) {
           </div>
         ) : showConfirm ? (
           <form action={signup} className="space-y-4">
-            <input type="hidden" name="email" value={email} />
-
             <div className="space-y-2">
               <Label htmlFor="email_display">Email</Label>
               <Input
                 id="email_display"
                 type="email"
-                value={email}
+                value={pendingEmail}
                 disabled
                 readOnly
                 autoComplete="email"
@@ -116,8 +144,8 @@ export default async function SignupPage({ searchParams }: Props) {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Min 6 characters"
-                minLength={6}
+                placeholder="Min 12 characters"
+                minLength={12}
                 required
                 autoComplete="new-password"
               />

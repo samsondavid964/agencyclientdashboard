@@ -106,8 +106,7 @@ export function InviteUserForm() {
           </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Only @ad-lab.io email addresses are accepted. After inviting, share the
-          /signup link with them — they&apos;ll sign up themselves.
+          Only @ad-lab.io email addresses are accepted. <strong>No email is sent automatically</strong> — you must notify the invitee (Slack or email) and share the /signup link so they can sign up themselves.
         </p>
       </form>
 
