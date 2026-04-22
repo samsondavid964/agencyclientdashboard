@@ -1,0 +1,365 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Accessibility: reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  :root {
+    /* Neutrals from design system */
+    --background: 210 33% 98%;       /* #F7F9FB Page bg */
+    --foreground: 219 46% 11%;       /* #0F1829 Text */
+    --card: 0 0% 100%;               /* #FFFFFF Card */
+    --card-foreground: 219 46% 11%;  /* #0F1829 Text */
+    --popover: 0 0% 100%;            /* #FFFFFF Card */
+    --popover-foreground: 219 46% 11%;
+    --primary: 283 80% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 285 80% 95%;
+    --secondary-foreground: 280 60% 40%;
+    --muted: 214 26% 95%;            /* #EEF1F5 Muted */
+    --muted-foreground: 216 15% 47%; /* #65748A Muted FG */
+    --subtle: 215 16% 65%;           /* #97A3B4 Subtle */
+    --accent: 18 88% 61%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 347 77% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 213 21% 91%;           /* #E5E9EE Border */
+    --input: 213 21% 91%;            /* #E5E9EE Border */
+    --ring: 283 80% 65%;
+    --radius: 0.75rem;
+
+    /* Sidebar — deep plum */
+    --sidebar: 286 65% 13%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-accent: 290 55% 28%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-muted-foreground: 290 12% 65%;
+    --sidebar-indicator: 280 75% 72%;
+
+    /* Status colors */
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+    --danger: 347 77% 50%;
+
+    /* Semantic alert backgrounds */
+    --success-bg: 160 60% 96%;
+    --success-border: 160 50% 82%;
+    --warning-bg: 38 90% 96%;
+    --warning-border: 38 70% 78%;
+    --danger-bg: 347 70% 97%;
+    --danger-border: 347 60% 85%;
+
+    /* Semantic health tokens (for direct use in components) */
+    --healthy-50: 152 81% 96%;
+    --healthy-100: 149 80% 90%;
+    --healthy-500: 160 84% 39%;
+    --healthy-600: 161 94% 30%;
+    --healthy-700: 163 94% 24%;
+
+    --warning-50: 48 96% 89%;
+    --warning-100: 48 96% 89%;
+    --warning-400: 43 96% 56%;
+    --warning-500: 38 92% 50%;
+    --warning-600: 32 95% 44%;
+    --warning-700: 26 90% 37%;
+
+    --critical-50: 0 86% 97%;
+    --critical-100: 0 93% 94%;
+    --critical-500: 0 84% 60%;
+    --critical-600: 0 72% 51%;
+    --critical-700: 0 64% 42%;
+
+    /* Purple brand scale — exact design system values */
+    --purple-950: 286 65% 13%;
+    --purple-900: 286 60% 19%;
+    --purple-800: 286 55% 27%;
+    --purple-700: 283 60% 37%;
+    --purple-600: 283 55% 49%;
+    --purple-500: 283 80% 65%;
+    --purple-400: 283 78% 71%;
+    --purple-300: 283 75% 80%;
+    --purple-200: 286 70% 88%;
+    --purple-100: 288 80% 95%;
+    --purple-50: 290 67% 98%;
+
+    /* Coral accent scale */
+    --coral-600: 14 78% 52%;
+    --coral-500: 18 88% 61%;
+    --coral-400: 18 95% 69%;
+    --coral-100: 20 100% 92%;
+    --coral-50: 22 100% 96%;
+  }
+
+  .dark {
+    /* Dark mode — same blue-grey hue family as light */
+    --background: 216 28% 7%;
+    --foreground: 214 20% 94%;
+    --card: 216 24% 11%;
+    --card-foreground: 214 20% 94%;
+    --popover: 216 24% 11%;
+    --popover-foreground: 214 20% 94%;
+    --primary: 283 75% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 216 22% 14%;
+    --secondary-foreground: 214 20% 94%;
+    --muted: 216 22% 14%;
+    --muted-foreground: 215 16% 60%;
+    --subtle: 215 14% 48%;
+    --accent: 18 88% 61%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 347 77% 40%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 216 20% 18%;
+    --input: 216 20% 18%;
+    --ring: 283 75% 55%;
+
+    /* Sidebar dark — deeper plum */
+    --sidebar: 290 70% 8%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-accent: 290 50% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-muted-foreground: 290 10% 55%;
+    --sidebar-indicator: 280 75% 72%;
+
+    --success: 160 84% 39%;
+    --warning: 38 92% 50%;
+    --danger: 347 77% 50%;
+
+    --success-bg: 160 50% 10%;
+    --success-border: 160 40% 22%;
+    --warning-bg: 38 50% 10%;
+    --warning-border: 38 40% 22%;
+    --danger-bg: 347 40% 10%;
+    --danger-border: 347 35% 22%;
+
+    /* Purple brand scale — exact design system values */
+    --purple-950: 286 65% 13%;
+    --purple-900: 286 60% 19%;
+    --purple-800: 286 55% 27%;
+    --purple-700: 283 60% 37%;
+    --purple-600: 283 55% 49%;
+    --purple-500: 283 80% 65%;
+    --purple-400: 283 78% 71%;
+    --purple-300: 283 75% 80%;
+    --purple-200: 286 70% 88%;
+    --purple-100: 288 80% 95%;
+    --purple-50: 290 67% 98%;
+
+    /* Coral accent scale */
+    --coral-600: 14 78% 52%;
+    --coral-500: 18 88% 61%;
+    --coral-400: 18 95% 69%;
+    --coral-100: 20 100% 92%;
+    --coral-50: 22 100% 96%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-variant-numeric: tabular-nums;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Smooth scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.4);
+  }
+
+  input, textarea, select, [role="combobox"] {
+    @apply transition-[border-color,box-shadow] duration-150;
+  }
+}
+
+@layer components {
+  /* Card hover with subtle lift */
+  .card-hover {
+    @apply transition-[box-shadow,transform,border-color] duration-200 ease-out;
+  }
+  .card-hover:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+    transform: translateY(-2px) scale(1.005);
+  }
+
+  /* Soft card shadow */
+  .card-shadow {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  }
+
+  /* Glass effect for header */
+  .glass {
+    @apply bg-white/90 backdrop-blur-md;
+  }
+  .dark .glass {
+    @apply bg-[hsl(222,47%,11%)]/90 backdrop-blur-md;
+  }
+
+  /* Sidebar nav active indicator */
+  .nav-active {
+    @apply relative;
+    background: hsla(280, 80%, 65%, 0.14);
+  }
+  .nav-active::before {
+    content: "";
+    @apply absolute left-0 top-[7px] bottom-[7px] w-[3px] rounded-r-full;
+    background: hsl(var(--sidebar-indicator));
+    box-shadow: 0 0 10px hsl(var(--sidebar-indicator));
+  }
+
+  /* Interactive card with compound hover */
+  .card-interactive {
+    @apply rounded-xl border bg-card shadow-sm transition-all duration-200 ease-out;
+  }
+  .card-interactive:hover {
+    @apply shadow-lg -translate-y-0.5;
+    border-color: hsl(var(--primary) / 0.2);
+  }
+
+  /* Subtle scale on hover for icon containers */
+  .icon-hover {
+    @apply transition-transform duration-150;
+  }
+  .icon-hover:hover {
+    transform: scale(1.05);
+  }
+}
+
+@layer utilities {
+  /* Subtle background pattern */
+  .bg-grid {
+    background-image: radial-gradient(circle at 1px 1px, hsl(var(--border) / 0.4) 1px, transparent 0);
+    background-size: 24px 24px;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+  }
+
+  .label-uppercase {
+    @apply text-[11px] font-semibold uppercase tracking-wider;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-dot {
+  0% { transform: scale(1); opacity: 0.75; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out both;
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 1.5s ease-out 3;
+}
+
+@keyframes barGrow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-bar-grow {
+  animation: barGrow 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+@keyframes loading-bar {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loading-bar {
+  animation: loading-bar 1.4s ease-in-out infinite;
+}
+
+@keyframes revealItem {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-1 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.06s both; }
+.stagger-2 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.12s both; }
+.stagger-3 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
+.stagger-4 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.24s both; }
+.stagger-5 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.30s both; }
+.stagger-6 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.36s both; }
+.stagger-7 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.42s both; }
+.stagger-8 { animation: revealItem 0.3s cubic-bezier(0.16,1,0.3,1) 0.48s both; }
