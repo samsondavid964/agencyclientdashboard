@@ -7,33 +7,22 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 // 2FA cookies mid-flow, and so a leaked service-role key does not also leak
 // the cookie-integrity secret (separation of duty).
 //
-// Production: fail-closed if unset — evaluated lazily on first use so
-// `next build`'s static page-data collection (which runs without runtime env
-// vars) doesn't throw. The first real request at runtime will still fail
-// closed. Dev/CI: one-time loud warning + fixed fallback so local flows work
-// without every contributor populating the env var.
+// Required in every environment — dev AND prod. Evaluated lazily on first
+// use so `next build`'s static page-data collection (which runs without
+// runtime env vars) doesn't throw; the first real request at runtime will
+// hard-fail if the secret is missing or short, with no silent fallback.
+// Contributors must set AUTH_COOKIE_SECRET in .env.local (32+ chars).
 let _cachedSecret: string | undefined;
-let _devWarned = false;
 
 function resolveAuthCookieSecret(): string {
   if (_cachedSecret !== undefined) return _cachedSecret;
   const value = process.env.AUTH_COOKIE_SECRET;
-  if (value && value.length >= 32) {
-    _cachedSecret = value;
-    return _cachedSecret;
-  }
-  if (process.env.NODE_ENV === "production") {
+  if (!value || value.length < 32) {
     throw new Error(
-      "AUTH_COOKIE_SECRET is required in production and must be at least 32 characters. Generate one with `openssl rand -hex 32`."
+      "AUTH_COOKIE_SECRET is required and must be at least 32 characters. Generate one with `openssl rand -hex 32` and add it to .env.local (dev) or your host's env (prod)."
     );
   }
-  if (!_devWarned) {
-    _devWarned = true;
-    console.warn(
-      "[AUTH_COOKIE_SECRET] Missing or too short — using insecure dev fallback. Set AUTH_COOKIE_SECRET in .env.local (32+ chars) before shipping."
-    );
-  }
-  _cachedSecret = "dev-only-insecure-auth-cookie-secret-do-not-use-in-prod";
+  _cachedSecret = value;
   return _cachedSecret;
 }
 

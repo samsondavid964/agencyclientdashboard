@@ -21,10 +21,8 @@ export async function Sidebar() {
   return (
     <SidebarShell>
       {/* Brand header */}
-      <div className="flex h-[54px] w-full shrink-0 border-b border-white/[0.06] p-2">
-        <div className="mt-[1.5px] flex w-full">
-          <SidebarBrand />
-        </div>
+      <div className="flex h-[72px] w-full shrink-0 items-center border-b border-white/[0.06] px-3">
+        <SidebarBrand />
       </div>
 
       {/* Nav + bottom section */}

@@ -3,7 +3,8 @@
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthenticatedUser, isAdmin } from "@/lib/utils/auth";
+import { getAuthenticatedUser } from "@/lib/utils/auth";
+import { hasClientAccess } from "@/lib/utils/client-access";
 import type { ActionState } from "@/lib/types/database";
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
@@ -89,6 +90,10 @@ export async function createNote(
     return { errors: parsed.error.flatten().fieldErrors, message: "Validation failed." };
   }
 
+  if (!(await hasClientAccess(user, parsed.data.client_id))) {
+    return { message: "Permission denied." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("workspace_notes").insert({
     client_id: parsed.data.client_id,
@@ -125,7 +130,7 @@ export async function togglePinNote(
 
   const supabase = await createClient();
 
-  // Only admin or note author can pin/unpin
+  // Only admin, note author, or user with client access can pin/unpin
   const { data: note } = await supabase
     .from("workspace_notes")
     .select("author_email")
@@ -134,7 +139,8 @@ export async function togglePinNote(
 
   if (!note) return { message: "Note not found." };
 
-  if (!isAdmin(user) && note.author_email !== (user.email ?? user.id)) {
+  const isAuthor = note.author_email === (user.email ?? user.id);
+  if (!isAuthor && !(await hasClientAccess(user, parsed.data.client_id))) {
     return { message: "Permission denied." };
   }
 
@@ -177,7 +183,8 @@ export async function deleteNote(
 
   if (!note) return { message: "Note not found." };
 
-  if (!isAdmin(user) && note.author_email !== (user.email ?? user.id)) {
+  const isAuthor = note.author_email === (user.email ?? user.id);
+  if (!isAuthor && !(await hasClientAccess(user, parsed.data.client_id))) {
     return { message: "Permission denied." };
   }
 
@@ -215,6 +222,10 @@ export async function createTask(
     return { errors: parsed.error.flatten().fieldErrors, message: "Validation failed." };
   }
 
+  if (!(await hasClientAccess(user, parsed.data.client_id))) {
+    return { message: "Permission denied." };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("workspace_tasks").insert({
     client_id: parsed.data.client_id,
@@ -242,7 +253,7 @@ export async function updateTaskStatus(
   prevState: ActionState,
   formData: FormData
 ): Promise<ActionState> {
-  await getAuthenticatedUser();
+  const user = await getAuthenticatedUser();
 
   const raw = {
     task_id: formData.get("task_id") as string,
@@ -253,6 +264,10 @@ export async function updateTaskStatus(
   const parsed = updateTaskStatusSchema.safeParse(raw);
   if (!parsed.success) {
     return { message: "Invalid request." };
+  }
+
+  if (!(await hasClientAccess(user, parsed.data.client_id))) {
+    return { message: "Permission denied." };
   }
 
   const supabase = await createClient();
@@ -295,7 +310,8 @@ export async function deleteTask(
 
   if (!task) return { message: "Task not found." };
 
-  if (!isAdmin(user) && task.created_by !== (user.email ?? user.id)) {
+  const isAuthor = task.created_by === (user.email ?? user.id);
+  if (!isAuthor && !(await hasClientAccess(user, parsed.data.client_id))) {
     return { message: "Permission denied." };
   }
 
@@ -329,6 +345,10 @@ export async function logActivity(
   const parsed = activitySchema.safeParse(raw);
   if (!parsed.success) {
     return { errors: parsed.error.flatten().fieldErrors, message: "Validation failed." };
+  }
+
+  if (!(await hasClientAccess(user, parsed.data.client_id))) {
+    return { message: "Permission denied." };
   }
 
   const supabase = await createClient();

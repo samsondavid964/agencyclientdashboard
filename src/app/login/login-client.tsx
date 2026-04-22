@@ -29,12 +29,10 @@ export default function LoginClient() {
   const rawError = searchParams.get("error");
   const rawMessage = searchParams.get("message");
 
-  const error = rawError
-    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
-    : undefined;
-  const message = rawMessage
-    ? (ALLOWED_MESSAGES.has(rawMessage) ? rawMessage : undefined)
-    : undefined;
+  // Drop unknown URL errors rather than showing a scary generic fallback.
+  const error = rawError && ALLOWED_ERRORS.has(rawError) ? rawError : undefined;
+  const message =
+    rawMessage && ALLOWED_MESSAGES.has(rawMessage) ? rawMessage : undefined;
 
   return (
     <div className="flex min-h-screen">

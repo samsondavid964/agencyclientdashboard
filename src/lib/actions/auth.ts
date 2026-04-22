@@ -28,6 +28,7 @@ import { validatePassword } from "@/lib/utils/password-policy";
 // HTTP round-trip differences aren't measurable.
 const LOGIN_MIN_MS = 600;
 const RESET_REQUEST_MIN_MS = 500;
+const SIGNUP_CHECK_MIN_MS = 450;
 
 async function padTiming(startedAt: number, minMs: number): Promise<void> {
   const elapsed = Date.now() - startedAt;
@@ -166,10 +167,12 @@ async function logAuthEvent(
 
 // ── Check Invite Email (Step 1 of signup) ──────────────────────────────
 export async function checkInviteEmail(formData: FormData) {
+  const startedAt = Date.now();
   const rawEmail = (formData.get("email") as string) || "";
   const email = rawEmail.trim().toLowerCase();
 
   if (!email) {
+    await padTiming(startedAt, SIGNUP_CHECK_MIN_MS);
     redirect(`/signup?error=${encodeURIComponent("Email is required.")}`);
   }
 
@@ -180,46 +183,51 @@ export async function checkInviteEmail(formData: FormData) {
   const ipOk = await rateLimitByIp("signup_check");
   const emailOk = await rateLimitByEmail("signup_check", email);
   if (!ipOk || !emailOk) {
+    await padTiming(startedAt, SIGNUP_CHECK_MIN_MS);
     redirect(
       `/signup?error=${encodeURIComponent("Too many attempts. Please try again later.")}`
     );
   }
 
   // Obvious off-domain non-admin emails get the denied step. That's not an
-  // enumeration leak because anyone could tell without contacting us.
+  // enumeration leak because anyone could tell without contacting us — but we
+  // still pad so off-domain and on-domain response times are indistinguishable.
   const isBootstrap = await canBootstrapAsAdmin(email);
   if (!email.endsWith("@ad-lab.io") && !isBootstrap) {
+    await padTiming(startedAt, SIGNUP_CHECK_MIN_MS);
     redirect(`/signup?step=denied`);
   }
 
   try {
     const adminClient = createAdminClient();
-    const { data, error } = await adminClient
+    // invited_emails has a CHECK (email = lower(email)) constraint; lowercase at the query site is defensive.
+    const { error } = await adminClient
       .from("invited_emails")
       .select("email")
-      .eq("email", email)
+      .eq("email", email.toLowerCase())
       .is("accepted_at", null)
       .maybeSingle();
 
     if (error) {
+      await padTiming(startedAt, SIGNUP_CHECK_MIN_MS);
       redirect(
         `/signup?error=${encodeURIComponent("Something went wrong. Please try again.")}`
       );
     }
 
     // Enumeration mitigation: every valid-looking email reaches /signup?step=confirm
-    // regardless of invite status. The cookie is set ONLY when the email has a
-    // real invite or qualifies as a bootstrap admin. Without the cookie, the
-    // signup POST will fail opaquely with "Session expired" — attackers cannot
-    // distinguish "invited" vs "not invited" from the redirect URL.
+    // AND always receives the signup_pending_email cookie. Invite validity is
+    // re-checked server-side in `signup()`; unauthorized emails fail opaquely
+    // there with "Session expired". This keeps both timing and Set-Cookie
+    // response headers constant across invited/not-invited.
     const cookieStore = await cookies();
-    if (data || isBootstrap) {
-      cookieStore.set("signup_pending_email", email, shortCookieOptions("/signup"));
-    }
+    cookieStore.set("signup_pending_email", email, shortCookieOptions("/signup"));
 
+    await padTiming(startedAt, SIGNUP_CHECK_MIN_MS);
     redirect(`/signup?step=confirm`);
   } catch (err) {
     unstable_rethrow(err);
+    await padTiming(startedAt, SIGNUP_CHECK_MIN_MS);
     redirect(
       `/signup?error=${encodeURIComponent("Something went wrong. Please try again.")}`
     );
@@ -285,7 +293,7 @@ export async function signup(formData: FormData) {
     const { data: invite, error: inviteError } = await adminClient
       .from("invited_emails")
       .select("id, email, role, accepted_at")
-      .eq("email", email)
+      .eq("email", email.toLowerCase())
       .is("accepted_at", null)
       .maybeSingle();
 
@@ -1119,7 +1127,7 @@ export async function inviteUser(
     const { data: existing, error: existingErr } = await adminClient
       .from("invited_emails")
       .select("id, accepted_at")
-      .eq("email", email)
+      .eq("email", email.toLowerCase())
       .maybeSingle();
     if (existingErr) {
       return { message: "Failed to check existing invite. Please try again." };
@@ -1133,7 +1141,7 @@ export async function inviteUser(
 
     const { error } = await adminClient.from("invited_emails").upsert(
       {
-        email,
+        email: email.toLowerCase(),
         role,
         invited_by_user_id: user.id,
         invited_at: new Date().toISOString(),

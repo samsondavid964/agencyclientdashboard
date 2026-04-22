@@ -25,9 +25,8 @@ const ALLOWED_ERRORS = new Set([
 
 export default async function ForgotPasswordPage({ searchParams }: Props) {
   const { error: rawError } = await searchParams;
-  const error = rawError
-    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
-    : undefined;
+  // Drop unknown URL errors rather than showing a generic fallback banner.
+  const error = rawError && ALLOWED_ERRORS.has(rawError) ? rawError : undefined;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background bg-grid">

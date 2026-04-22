@@ -77,7 +77,17 @@ async function isPwnedPassword(password: string): Promise<boolean> {
       },
     );
 
-    if (!res.ok) return false;
+    if (!res.ok) {
+      console.error(
+        "[HIBP_UNAVAILABLE]",
+        JSON.stringify({
+          reason: "non_ok_status",
+          status: res.status,
+          ts: new Date().toISOString(),
+        })
+      );
+      return false;
+    }
     const text = await res.text();
     const lines = text.split(/\r?\n/);
     for (const line of lines) {
@@ -90,8 +100,24 @@ async function isPwnedPassword(password: string): Promise<boolean> {
     }
     return false;
   } catch (err) {
-    // Fail-open on HIBP outages so a third-party downtime does not lock legitimate users out of password changes
-    console.warn("[password-policy] HIBP lookup failed, failing open:", err);
+    // Fail-open on HIBP outages. Blocking every password change because a third
+    // party is down would be a worse failure mode than accepting the rare
+    // compromised password during an outage. The structured log below is the
+    // alert hook: an on-call rule matching `[HIBP_UNAVAILABLE]` surfaces the
+    // visibility gap so the gap is auditable and bounded in time.
+    const isAbort =
+      (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "AbortError") ||
+      (typeof err === "object" && err !== null && "name" in err && (err as { name?: string }).name === "TimeoutError");
+    console.error(
+      "[HIBP_UNAVAILABLE]",
+      JSON.stringify({
+        reason: "fetch_threw",
+        kind: isAbort ? "timeout_or_abort" : "network_or_other",
+        error_name: err instanceof Error ? err.name : typeof err,
+        error_message: err instanceof Error ? err.message : String(err),
+        ts: new Date().toISOString(),
+      })
+    );
     return false;
   }
 }

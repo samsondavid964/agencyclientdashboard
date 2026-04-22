@@ -61,8 +61,8 @@ export function Header({
             )}
           </Button>
 
-          <div className="min-w-0">
-            <h1 className="font-display text-[22px] font-bold leading-tight tracking-tight text-foreground truncate">
+          <div className="min-w-0 lg:pl-1">
+            <h1 className="font-display text-[17px] font-semibold leading-none tracking-tight text-foreground truncate">
               {title}
             </h1>
           </div>

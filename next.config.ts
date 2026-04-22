@@ -1,6 +1,19 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+// Fail-closed: if NEXT_PUBLIC_APP_URL isn't set in production, the allowlist
+// below collapses to [] and the defensive intent vanishes silently. Abort the
+// boot instead — a missing production origin is a deployment misconfiguration,
+// not something to swallow.
+if (
+  process.env.NODE_ENV === "production" &&
+  !process.env.NEXT_PUBLIC_APP_URL?.trim()
+) {
+  throw new Error(
+    "NEXT_PUBLIC_APP_URL is required in production. Set it to the canonical https URL (e.g. https://dashboard.ad-lab.io) in your Vercel/host env."
+  );
+}
+
 // Server Actions' default CSRF protection relies on the Origin header matching
 // the request host. A CDN or proxy that rewrites Host/Origin can defeat that
 // check silently, so we pin the allowlist explicitly. Deployment contract:

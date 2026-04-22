@@ -2,7 +2,8 @@
 
 import { revalidatePath, revalidateTag } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { getAuthenticatedUser, isAdmin } from "@/lib/utils/auth";
+import { getAuthenticatedUser } from "@/lib/utils/auth";
+import { hasClientAccess, filterAccessibleClientIds } from "@/lib/utils/client-access";
 import { logActionSchema } from "@/lib/validations/client";
 import type { ActionState } from "@/lib/types/database";
 
@@ -42,17 +43,9 @@ export async function logActionTaken(
     return { message: "Action has already been logged for this alert." };
   }
 
-  // Permission check: admin or assigned media buyer
-  if (!isAdmin(user)) {
-    const { data: client } = await supabase
-      .from("clients")
-      .select("mb_assigned")
-      .eq("id", alert.client_id)
-      .single();
-
-    if (!client || user.email !== client.mb_assigned) {
-      return { message: "You do not have permission to log actions for this client." };
-    }
+  // Permission check: admin or assigned owner
+  if (!(await hasClientAccess(user, alert.client_id))) {
+    return { message: "You do not have permission to log actions for this client." };
   }
 
   // Update alert_log
@@ -83,7 +76,12 @@ export async function logActionTaken(
 export async function bulkResolveAlerts(
   alertIds: string[],
   notes: string
-): Promise<{ success: boolean; message: string; resolvedCount?: number }> {
+): Promise<{
+  success: boolean;
+  message: string;
+  resolvedCount?: number;
+  skippedAlreadyResolvedCount?: number;
+}> {
   if (!alertIds.length) {
     return { success: false, message: "No alert IDs provided." };
   }
@@ -108,33 +106,28 @@ export async function bulkResolveAlerts(
 
   // Only process alerts that are still unresolved
   const unresolved = alerts.filter((a) => a.response_notes === null);
+  const skippedAlreadyResolvedCount = alerts.length - unresolved.length;
 
   if (unresolved.length === 0) {
-    return { success: false, message: "All selected alerts are already resolved." };
+    return {
+      success: false,
+      message: "All selected alerts are already resolved.",
+      skippedAlreadyResolvedCount,
+    };
   }
 
-  // Permission check for non-admins: must be assigned MB on every alert's client
-  if (!isAdmin(user)) {
-    const clientIds = [...new Set(unresolved.map((a) => a.client_id))];
-    const { data: clients } = await supabase
-      .from("clients")
-      .select("id, mb_assigned")
-      .in("id", clientIds);
+  // Permission check: filter the unresolved alerts' client IDs by access.
+  // If any are missing from the accessible set, reject the whole batch.
+  const clientIds = [...new Set(unresolved.map((a) => a.client_id))];
+  const accessibleClientIds = await filterAccessibleClientIds(user, clientIds);
+  const accessibleSet = new Set(accessibleClientIds);
+  const permitted = unresolved.every((a) => accessibleSet.has(a.client_id));
 
-    const clientMap = new Map(
-      (clients ?? []).map((c) => [c.id, c.mb_assigned])
-    );
-
-    const permitted = unresolved.every(
-      (a) => clientMap.get(a.client_id) === user.email
-    );
-
-    if (!permitted) {
-      return {
-        success: false,
-        message: "You do not have permission to resolve one or more of these alerts.",
-      };
-    }
+  if (!permitted) {
+    return {
+      success: false,
+      message: "You do not have permission to resolve one or more of these alerts.",
+    };
   }
 
   const resolvedIds = unresolved.map((a) => a.id);
@@ -157,9 +150,20 @@ export async function bulkResolveAlerts(
   revalidatePath("/alerts");
   revalidateTag("client");
 
+  const baseMessage = `${resolvedIds.length} alert${
+    resolvedIds.length !== 1 ? "s" : ""
+  } resolved.`;
+  const message =
+    skippedAlreadyResolvedCount > 0
+      ? `${baseMessage} ${skippedAlreadyResolvedCount} ${
+          skippedAlreadyResolvedCount === 1 ? "was" : "were"
+        } already resolved and skipped.`
+      : baseMessage;
+
   return {
     success: true,
-    message: `${resolvedIds.length} alert${resolvedIds.length !== 1 ? "s" : ""} resolved.`,
+    message,
     resolvedCount: resolvedIds.length,
+    skippedAlreadyResolvedCount,
   };
 }

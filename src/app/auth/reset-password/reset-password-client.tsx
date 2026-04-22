@@ -30,10 +30,9 @@ const ALLOWED_ERRORS = new Set<string>([
 
 export default function ResetPasswordClient() {
   const searchParams = useSearchParams();
+  // Drop unknown URL errors rather than showing a generic fallback banner.
   const rawError = searchParams.get("error");
-  const error = rawError
-    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
-    : undefined;
+  const error = rawError && ALLOWED_ERRORS.has(rawError) ? rawError : undefined;
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");

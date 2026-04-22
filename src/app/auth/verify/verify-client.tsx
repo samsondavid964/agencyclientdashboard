@@ -90,10 +90,12 @@ function OtpInput({ value, onChange }: { value: string; onChange: (val: string) 
 export default function VerifyClient({ email, type }: VerifyClientProps) {
   const searchParams = useSearchParams();
 
+  // Only render URL-sourced errors that match our allowlist. An unrecognised
+  // error param (stale URL, browser-history back-navigation, crafted link)
+  // shouldn't render a scary generic banner on what is otherwise a happy-path
+  // landing — better to silently drop it than to confuse the user mid-flow.
   const rawError = searchParams.get("error");
-  const error = rawError
-    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
-    : undefined;
+  const error = rawError && ALLOWED_ERRORS.has(rawError) ? rawError : undefined;
 
   const labels = TYPE_LABELS[type] ?? TYPE_LABELS.signup;
 

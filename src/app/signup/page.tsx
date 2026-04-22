@@ -41,9 +41,9 @@ const ALLOWED_ERRORS = new Set<string>([
 
 export default async function SignupPage({ searchParams }: Props) {
   const { step, error: rawError } = await searchParams;
-  const error = rawError
-    ? (ALLOWED_ERRORS.has(rawError) ? rawError : "Something went wrong.")
-    : undefined;
+  // Silently drop unknown error params — stale URLs shouldn't render a scary
+  // generic banner on an otherwise happy-path landing.
+  const error = rawError && ALLOWED_ERRORS.has(rawError) ? rawError : undefined;
 
   // Email lives in the HttpOnly `signup_pending_email` cookie (set by
   // checkInviteEmail) — never in the URL. Presence of the cookie is what
