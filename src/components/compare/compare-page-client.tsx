@@ -77,7 +77,7 @@ export function ComparePageClient({
 
       {/* Table or empty state */}
       {loading ? (
-        <ComparisonTableSkeleton columns={selectedIds.length} />
+        <ComparisonTableSkeleton />
       ) : showTable ? (
         <ComparisonTable clients={data} />
       ) : (
@@ -92,38 +92,23 @@ export function ComparePageClient({
   );
 }
 
-function ComparisonTableSkeleton({ columns }: { columns: number }) {
-  const cols = Math.max(columns, 2);
+function ComparisonTableSkeleton() {
   return (
-    <div className="rounded-xl border bg-card overflow-x-auto">
-      <table className="w-full text-sm" aria-busy="true" aria-label="Loading comparison">
-        <thead>
-          <tr className="border-b bg-muted/40">
-            <th className="px-4 py-3">
-              <Skeleton className="h-4 w-16" />
-            </th>
-            {Array.from({ length: cols }).map((_, i) => (
-              <th key={i} className="min-w-[160px] px-4 py-3">
-                <Skeleton className="h-5 w-32" />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {Array.from({ length: 8 }).map((_, rowIdx) => (
-            <tr key={rowIdx} className="border-b last:border-0">
-              <td className="px-4 py-3">
-                <Skeleton className="h-4 w-20" />
-              </td>
-              {Array.from({ length: cols }).map((_, colIdx) => (
-                <td key={colIdx} className="px-4 py-3">
-                  <Skeleton className="h-5 w-24" />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div
+      className="rounded-xl border bg-card overflow-hidden"
+      aria-busy="true"
+      aria-label="Loading comparison"
+    >
+      <div className="bg-muted/40 px-4 py-3">
+        <Skeleton variant="line" className="w-48" />
+      </div>
+      <div className="divide-y">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="px-4 py-3">
+            <Skeleton variant="bar" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

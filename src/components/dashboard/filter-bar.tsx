@@ -502,18 +502,7 @@ export function FilterBar({ mediaBuyers, rightSlot }: FilterBarProps) {
                 type="button"
                 onClick={() => updateParams({ health: range.value })}
                 aria-pressed={isActive}
-                className={cn(
-                  "h-9 rounded-full px-3 text-xs font-medium transition-all duration-150 border",
-                  isActive
-                    ? range.value === "critical"
-                      ? "border-red-200 bg-red-50 text-red-700 shadow-sm dark:border-red-900 dark:bg-red-950/40 dark:text-red-300"
-                      : range.value === "warning"
-                      ? "border-amber-200 bg-amber-50 text-amber-700 shadow-sm dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
-                      : range.value === "healthy"
-                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      : "border-border bg-muted text-foreground shadow-sm"
-                    : "border-transparent bg-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
+                className="h-9 rounded-full border border-transparent bg-transparent px-3 text-xs font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
               >
                 {range.label}
                 {range.value === "critical" && " <60"}

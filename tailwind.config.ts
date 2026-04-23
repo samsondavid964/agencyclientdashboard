@@ -123,9 +123,9 @@ const config: Config = {
           from: { opacity: "0", transform: "translateY(8px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
+        "skeleton-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.55" },
         },
         "loading-bar": {
           "0%": { transform: "translateX(-100%)" },
@@ -149,7 +149,8 @@ const config: Config = {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out forwards",
         "slide-up": "slide-up 0.4s ease-out forwards",
-        shimmer: "shimmer 1.5s ease-in-out infinite",
+        "skeleton-pulse":
+          "skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "loading-bar": "loading-bar 1s ease-in-out infinite",
         "score-fill": "score-fill 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "bar-grow": "bar-grow 0.6s ease-out forwards",

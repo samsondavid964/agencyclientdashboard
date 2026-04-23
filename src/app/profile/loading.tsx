@@ -9,29 +9,29 @@ export default function ProfileLoading() {
       aria-label="Loading profile"
     >
       <div className="space-y-2">
-        <Skeleton className="h-7 w-40" />
-        <Skeleton className="h-4 w-64" />
+        <Skeleton variant="heading" className="w-40" />
+        <Skeleton variant="line" className="w-64" />
       </div>
 
       <div className="rounded-xl border bg-card p-6 shadow-sm space-y-6">
         <div className="flex items-center gap-4">
-          <Skeleton className="h-20 w-20 rounded-full" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-48" />
+          <Skeleton variant="avatar" className="h-20 w-20" />
+          <div className="flex-1 space-y-2">
+            <Skeleton variant="heading" className="w-40" />
+            <Skeleton variant="line" className="w-56" />
           </div>
         </div>
 
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-9 w-full" />
+              <Skeleton variant="line" className="w-1/4" />
+              <Skeleton variant="bar" />
             </div>
           ))}
         </div>
 
-        <Skeleton className="h-9 w-32" />
+        <Skeleton variant="bar" className="w-32" />
       </div>
     </div>
   );

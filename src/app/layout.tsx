@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider } from "@/components/layout/sidebar-provider";
 import { PageTitleProvider } from "@/components/layout/page-title-provider";
 import { PageTransition } from "@/components/layout/page-transition";
+import { Skeleton } from "@/components/ui/skeleton";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -107,7 +108,19 @@ async function DashboardShell({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <MobileSidebar {...userData} />
       <div className="flex flex-1 flex-col transition-[padding-left] duration-200 ease-in-out lg:pl-[var(--sidebar-width)]">
-        <Suspense fallback={<div className="h-14 border-b bg-background" />}>
+        <Suspense
+          fallback={
+            <div className="sticky top-0 z-20 border-b border-transparent bg-background/95 px-4 backdrop-blur-md lg:px-6">
+              <div className="flex h-[72px] items-center justify-between gap-4">
+                <Skeleton variant="heading" className="w-40" />
+                <div className="flex items-center gap-2.5">
+                  <Skeleton variant="bar" className="h-9 w-9 rounded-lg" />
+                  <Skeleton variant="avatar" className="h-9 w-9" />
+                </div>
+              </div>
+            </div>
+          }
+        >
           <Header
             userInitials={userData.userInitials}
             avatarUrl={userData.avatarUrl}

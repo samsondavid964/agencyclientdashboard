@@ -37,6 +37,18 @@ async function padTiming(startedAt: number, minMs: number): Promise<void> {
   }
 }
 
+// Supabase returns a 429 with code "over_email_send_rate_limit" when the
+// SMTP send quota is exhausted. Detect it so the UI can show a specific
+// message instead of collapsing into a generic failure.
+function isEmailRateLimitError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const err = error as { status?: number; code?: string; message?: string };
+  if (err.status === 429) return true;
+  if (err.code === "over_email_send_rate_limit") return true;
+  if (typeof err.message === "string" && /rate limit/i.test(err.message)) return true;
+  return false;
+}
+
 type ActionState = {
   message?: string;
   success?: boolean;
@@ -519,9 +531,10 @@ export async function login(formData: FormData) {
 
     if (otpError) {
       await padTiming(startedAt, LOGIN_MIN_MS);
-      redirect(
-        `/login?error=${encodeURIComponent("Could not send verification code. Please try again.")}`
-      );
+      const message = isEmailRateLimitError(otpError)
+        ? "Too many verification codes sent. Please wait a few minutes before trying again."
+        : "Could not send verification code. Please try again.";
+      redirect(`/login?error=${encodeURIComponent(message)}`);
     }
 
     await logAuthEvent("login_success", {
@@ -598,7 +611,12 @@ export async function sendOtpCode(
             email,
             options: { shouldCreateUser: false },
           });
-    if (error) return { message: "Could not resend code. Please try again." };
+    if (error) {
+      const message = isEmailRateLimitError(error)
+        ? "Too many codes sent. Please wait a few minutes before requesting another."
+        : "Could not resend code. Please try again.";
+      return { message };
+    }
     return { success: true, message: "A new code has been sent to your email." };
   } catch {
     return { message: "Something went wrong. Please try again." };
@@ -862,9 +880,10 @@ export async function requestPasswordReset(formData: FormData) {
 
     if (error) {
       await padTiming(startedAt, RESET_REQUEST_MIN_MS);
-      redirect(
-        `/auth/forgot-password?error=${encodeURIComponent("Could not send reset code. Please try again.")}`
-      );
+      const message = isEmailRateLimitError(error)
+        ? "Too many reset codes sent. Please wait a few minutes before trying again."
+        : "Could not send reset code. Please try again.";
+      redirect(`/auth/forgot-password?error=${encodeURIComponent(message)}`);
     }
 
     // M10: persist email in HttpOnly cookie for verify/resend steps.

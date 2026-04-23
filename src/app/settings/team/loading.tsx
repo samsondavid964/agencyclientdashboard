@@ -3,31 +3,31 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function TeamLoading() {
   return (
     <div
-      className="mx-auto max-w-4xl px-4 py-8 sm:px-6"
+      className="mx-auto max-w-4xl px-4 py-8 sm:px-6 space-y-6"
       role="status"
       aria-live="polite"
       aria-label="Loading team"
     >
-      <div className="mb-8 space-y-2">
-        <Skeleton className="h-7 w-48" />
-        <Skeleton className="h-4 w-80" />
+      <div className="space-y-2">
+        <Skeleton variant="heading" className="w-48" />
+        <Skeleton variant="line" className="w-80" />
       </div>
 
-      <div className="mb-6 rounded-lg border bg-card p-4">
-        <Skeleton className="h-9 w-full" />
+      <Skeleton variant="bar" className="w-64" />
+
+      <div className="rounded-xl border bg-card p-5 space-y-3">
+        <Skeleton variant="heading" className="w-40" />
+        <Skeleton variant="bar" />
       </div>
 
-      <div className="rounded-lg border bg-card">
-        <div className="border-b p-4">
-          <Skeleton className="h-4 w-40" />
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <div className="bg-muted/40 px-4 py-3">
+          <Skeleton variant="line" className="w-40" />
         </div>
         <div className="divide-y">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 p-4">
-              <Skeleton className="h-8 w-8 rounded-full" />
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="ml-auto h-4 w-48" />
-              <Skeleton className="h-6 w-16 rounded-full" />
+            <div key={i} className="px-4 py-3">
+              <Skeleton variant="bar" />
             </div>
           ))}
         </div>
