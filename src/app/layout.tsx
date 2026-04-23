@@ -9,6 +9,7 @@ import { SidebarProvider } from "@/components/layout/sidebar-provider";
 import { PageTitleProvider } from "@/components/layout/page-title-provider";
 import { PageTransition } from "@/components/layout/page-transition";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isSupabaseAuthCookieName } from "@/lib/utils/auth-cookies";
 import "./globals.css";
 
 const dmSans = DM_Sans({
@@ -50,7 +51,7 @@ export default async function RootLayout({
   // This is a lightweight check — no Supabase client needed.
   const cookieStore = await cookies();
   const hasSession = cookieStore.getAll().some((c) =>
-    c.name.startsWith("sb-") && c.name.endsWith("-auth-token")
+    isSupabaseAuthCookieName(c.name)
   );
   // A session is only "full" when it's not awaiting a second factor and not
   // in a recovery/reset-password flow. Either pending state means the user
