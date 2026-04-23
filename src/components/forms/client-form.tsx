@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect, useState, useActionState } from "react";
+import { useRef, useEffect, useState, useActionState, startTransition } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertTriangle, ChevronDown, Loader2 } from "lucide-react";
@@ -128,7 +128,9 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
     async () => {
       if (!formRef.current) return;
       const formData = new FormData(formRef.current);
-      formAction(formData);
+      startTransition(() => {
+        formAction(formData);
+      });
     },
     () => {
       toast.error("Please fix the highlighted fields before saving.");
