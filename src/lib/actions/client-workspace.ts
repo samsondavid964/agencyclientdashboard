@@ -7,6 +7,10 @@ import { getAuthenticatedUser } from "@/lib/utils/auth";
 import { hasClientAccess } from "@/lib/utils/client-access";
 import type { ActionState } from "@/lib/types/database";
 
+// Writes target the real tables from migration 027:
+//   client_notes, client_tasks, client_activity_log.
+// UI-facing field names (is_pinned, status, actor_email) are translated here.
+
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const noteSchema = z.object({
@@ -40,7 +44,7 @@ const taskSchema = z.object({
 const updateTaskStatusSchema = z.object({
   task_id: z.string().uuid("Invalid task ID"),
   client_id: z.string().uuid("Invalid client ID"),
-  status: z.enum(["open", "in_progress", "done"]),
+  status: z.enum(["open", "done"]),
 });
 
 const deleteTaskSchema = z.object({
@@ -95,11 +99,12 @@ export async function createNote(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("workspace_notes").insert({
+  const { error } = await supabase.from("client_notes").insert({
     client_id: parsed.data.client_id,
     body: parsed.data.body,
-    is_pinned: parsed.data.is_pinned ?? false,
-    author_email: user.email ?? user.id,
+    pinned: parsed.data.is_pinned ?? false,
+    author_user_id: user.id,
+    author_email: user.email ?? null,
   });
 
   if (error) {
@@ -132,21 +137,21 @@ export async function togglePinNote(
 
   // Only admin, note author, or user with client access can pin/unpin
   const { data: note } = await supabase
-    .from("workspace_notes")
+    .from("client_notes")
     .select("author_email")
     .eq("id", parsed.data.note_id)
     .single();
 
   if (!note) return { message: "Note not found." };
 
-  const isAuthor = note.author_email === (user.email ?? user.id);
+  const isAuthor = note.author_email === (user.email ?? null);
   if (!isAuthor && !(await hasClientAccess(user, parsed.data.client_id))) {
     return { message: "Permission denied." };
   }
 
   const { error } = await supabase
-    .from("workspace_notes")
-    .update({ is_pinned: parsed.data.is_pinned })
+    .from("client_notes")
+    .update({ pinned: parsed.data.is_pinned })
     .eq("id", parsed.data.note_id);
 
   if (error) {
@@ -176,20 +181,20 @@ export async function deleteNote(
   const supabase = await createClient();
 
   const { data: note } = await supabase
-    .from("workspace_notes")
+    .from("client_notes")
     .select("author_email")
     .eq("id", parsed.data.note_id)
     .single();
 
   if (!note) return { message: "Note not found." };
 
-  const isAuthor = note.author_email === (user.email ?? user.id);
+  const isAuthor = note.author_email === (user.email ?? null);
   if (!isAuthor && !(await hasClientAccess(user, parsed.data.client_id))) {
     return { message: "Permission denied." };
   }
 
   const { error } = await supabase
-    .from("workspace_notes")
+    .from("client_notes")
     .delete()
     .eq("id", parsed.data.note_id);
 
@@ -227,7 +232,7 @@ export async function createTask(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("workspace_tasks").insert({
+  const { error } = await supabase.from("client_tasks").insert({
     client_id: parsed.data.client_id,
     title: parsed.data.title,
     description: parsed.data.description ?? null,
@@ -236,8 +241,8 @@ export async function createTask(
       parsed.data.assigned_email && parsed.data.assigned_email !== ""
         ? parsed.data.assigned_email
         : null,
-    created_by: user.email ?? user.id,
-    status: "open",
+    created_by_user_id: user.id,
+    completed: false,
   });
 
   if (error) {
@@ -270,10 +275,14 @@ export async function updateTaskStatus(
     return { message: "Permission denied." };
   }
 
+  const completed = parsed.data.status === "done";
   const supabase = await createClient();
   const { error } = await supabase
-    .from("workspace_tasks")
-    .update({ status: parsed.data.status })
+    .from("client_tasks")
+    .update({
+      completed,
+      completed_at: completed ? new Date().toISOString() : null,
+    })
     .eq("id", parsed.data.task_id);
 
   if (error) {
@@ -303,20 +312,20 @@ export async function deleteTask(
   const supabase = await createClient();
 
   const { data: task } = await supabase
-    .from("workspace_tasks")
-    .select("created_by")
+    .from("client_tasks")
+    .select("created_by_user_id")
     .eq("id", parsed.data.task_id)
     .single();
 
   if (!task) return { message: "Task not found." };
 
-  const isAuthor = task.created_by === (user.email ?? user.id);
+  const isAuthor = task.created_by_user_id === user.id;
   if (!isAuthor && !(await hasClientAccess(user, parsed.data.client_id))) {
     return { message: "Permission denied." };
   }
 
   const { error } = await supabase
-    .from("workspace_tasks")
+    .from("client_tasks")
     .delete()
     .eq("id", parsed.data.task_id);
 
@@ -352,11 +361,12 @@ export async function logActivity(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("workspace_activity").insert({
+  const { error } = await supabase.from("client_activity_log").insert({
     client_id: parsed.data.client_id,
     activity_type: parsed.data.activity_type,
     summary: parsed.data.summary,
-    actor_email: user.email ?? user.id,
+    user_id: user.id,
+    user_email: user.email ?? null,
   });
 
   if (error) {

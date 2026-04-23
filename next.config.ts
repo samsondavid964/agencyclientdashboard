@@ -42,6 +42,10 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
       allowedOrigins: serverActionsAllowedOrigins,
+      // Default is 1MB. Avatar/logo uploads allow up to 2MB files; multipart
+      // framing adds a few KB of overhead, so 3MB gives comfortable headroom
+      // without widening the attack surface for oversized payloads.
+      bodySizeLimit: "3mb",
     },
   },
 };

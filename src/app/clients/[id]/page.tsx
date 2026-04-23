@@ -249,6 +249,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
             <WorkspaceSection
               clientId={client.id}
               canWrite={canWriteWorkspace}
+              currentUserId={user.id}
               currentUserEmail={user.email || ""}
               isAdmin={userIsAdmin}
             />

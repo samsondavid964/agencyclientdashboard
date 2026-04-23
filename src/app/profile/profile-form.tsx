@@ -69,16 +69,23 @@ export function ProfileForm({ initialUser }: ProfileFormProps) {
     formData.append("avatar", file);
 
     startUploading(async () => {
-      const result = await uploadAvatar(formData);
-      if (result.error) {
-        toast.error(result.error);
-      } else {
-        toast.success("Avatar updated!");
-        if (result.avatarUrl) {
-          setUser((prev) => ({ ...prev, avatarUrl: result.avatarUrl! }));
+      try {
+        const result = await uploadAvatar(formData);
+        if (result.error) {
+          toast.error(result.error);
+        } else {
+          toast.success("Avatar updated!");
+          if (result.avatarUrl) {
+            setUser((prev) => ({ ...prev, avatarUrl: result.avatarUrl! }));
+          }
         }
+      } catch {
+        // Catches framework-level failures (e.g. body-size rejection before
+        // the action runs) so the page doesn't bounce to the error boundary.
+        toast.error("Could not upload avatar. Please try a smaller image.");
+      } finally {
+        e.target.value = "";
       }
-      e.target.value = "";
     });
   };
 

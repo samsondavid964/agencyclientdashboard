@@ -41,10 +41,12 @@ interface SidebarContentProps {
 
 /** Animated aside shell — handles collapse width transition on desktop */
 export function SidebarShell({ children }: { children: React.ReactNode }) {
-  const { isCollapsed } = useSidebar();
+  const { isCollapsed, onMouseEnter, onMouseLeave } = useSidebar();
 
   return (
     <aside
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       className={cn(
         "fixed inset-y-0 left-0 z-30 hidden flex-col bg-[hsl(var(--sidebar))] text-[hsl(var(--sidebar-foreground))] border-r border-white/[0.06] transition-[width] duration-200 ease-in-out lg:flex",
         isCollapsed ? "w-16" : "w-[260px]"

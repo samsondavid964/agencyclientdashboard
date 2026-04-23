@@ -9,6 +9,7 @@ import { AnimateIn } from "@/components/ui/animate-in";
 interface WorkspaceSectionProps {
   clientId: string;
   canWrite: boolean;
+  currentUserId: string;
   currentUserEmail: string;
   isAdmin: boolean;
 }
@@ -16,6 +17,7 @@ interface WorkspaceSectionProps {
 export async function WorkspaceSection({
   clientId,
   canWrite,
+  currentUserId,
   currentUserEmail,
   isAdmin,
 }: WorkspaceSectionProps) {
@@ -33,6 +35,7 @@ export async function WorkspaceSection({
         tasks={tasks}
         activities={activities}
         canWrite={canWrite}
+        currentUserId={currentUserId}
         currentUserEmail={currentUserEmail}
         isAdmin={isAdmin}
       />

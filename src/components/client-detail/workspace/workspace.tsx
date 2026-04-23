@@ -16,6 +16,7 @@ interface WorkspaceProps {
   tasks: WorkspaceTask[];
   activities: WorkspaceActivity[];
   canWrite: boolean;
+  currentUserId: string;
   currentUserEmail: string;
   isAdmin: boolean;
 }
@@ -26,6 +27,7 @@ export function Workspace({
   tasks,
   activities,
   canWrite,
+  currentUserId,
   currentUserEmail,
   isAdmin,
 }: WorkspaceProps) {
@@ -121,7 +123,7 @@ export function Workspace({
                 tasks={tasks}
                 clientId={clientId}
                 canWrite={canWrite}
-                currentUserEmail={currentUserEmail}
+                currentUserId={currentUserId}
                 isAdmin={isAdmin}
               />
               {canWrite && (
