@@ -120,17 +120,22 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
     setConfirmDuplicate(false);
   }, [watchedName]);
 
-  // Run client-side Zod validation then submit via the native form action.
-  const handleSubmit = form.handleSubmit(async () => {
-    const isValid = await form.trigger();
-    if (!isValid) {
+  // Run client-side Zod validation, then dispatch the server action directly.
+  // We can't rely on the form's native `action` to fire because RHF's
+  // handleSubmit always calls preventDefault(). Calling formAction(FormData)
+  // directly sidesteps that and avoids a requestSubmit() → onSubmit loop.
+  const handleSubmit = form.handleSubmit(
+    async () => {
+      if (!formRef.current) return;
+      const formData = new FormData(formRef.current);
+      formAction(formData);
+    },
+    () => {
       toast.error("Please fix the highlighted fields before saving.");
       const firstErrorField = Object.keys(form.formState.errors)[0];
       if (firstErrorField) form.setFocus(firstErrorField as keyof ClientFormValues);
-      return;
     }
-    formRef.current?.requestSubmit();
-  });
+  );
 
   // Soft warning: ROAS target below 1.0 (create flow only).
   const roasTargetValue = form.watch("roas_target");
@@ -579,94 +584,6 @@ export function ClientForm({ client, onSuccess }: ClientFormProps) {
               {errors.clickup_folder_url && (
                 <p id="clickup_folder_url_error" role="alert" className="text-sm text-destructive">
                   {errors.clickup_folder_url.message}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      </details>
-
-      {/* Alert Thresholds — collapsible */}
-      <details className="group rounded-lg border">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium [&::-webkit-details-marker]:hidden">
-          Alert Thresholds
-          <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" aria-hidden="true" />
-        </summary>
-        <div className="border-t px-4 py-4 space-y-4">
-          <p className="text-xs text-muted-foreground">
-            Slack alerts fire when the weighted score drops below the overall
-            threshold, or any single dimension drops below the dimension
-            threshold. Leave defaults unless this client needs stricter or
-            looser monitoring (e.g. high-spend accounts).
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="alert_threshold_weighted">
-                Weighted score threshold
-              </Label>
-              <Input
-                id="alert_threshold_weighted"
-                aria-invalid={!!errors.alert_threshold_weighted}
-                aria-describedby={
-                  errors.alert_threshold_weighted
-                    ? "alert_threshold_weighted_error"
-                    : undefined
-                }
-                {...form.register("alert_threshold_weighted", {
-                  valueAsNumber: true,
-                })}
-                type="number"
-                step="1"
-                min="0"
-                max="100"
-                placeholder="60"
-              />
-              <p className="text-xs text-muted-foreground">
-                Default 60. Alerts when overall health &lt; this value.
-              </p>
-              {errors.alert_threshold_weighted && (
-                <p
-                  id="alert_threshold_weighted_error"
-                  role="alert"
-                  className="text-sm text-destructive"
-                >
-                  {errors.alert_threshold_weighted.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="alert_threshold_dimension">
-                Per-dimension threshold
-              </Label>
-              <Input
-                id="alert_threshold_dimension"
-                aria-invalid={!!errors.alert_threshold_dimension}
-                aria-describedby={
-                  errors.alert_threshold_dimension
-                    ? "alert_threshold_dimension_error"
-                    : undefined
-                }
-                {...form.register("alert_threshold_dimension", {
-                  valueAsNumber: true,
-                })}
-                type="number"
-                step="1"
-                min="0"
-                max="100"
-                placeholder="40"
-              />
-              <p className="text-xs text-muted-foreground">
-                Default 40. Alerts when spend pacing, CPA, or conv quality &lt;
-                this value.
-              </p>
-              {errors.alert_threshold_dimension && (
-                <p
-                  id="alert_threshold_dimension_error"
-                  role="alert"
-                  className="text-sm text-destructive"
-                >
-                  {errors.alert_threshold_dimension.message}
                 </p>
               )}
             </div>
