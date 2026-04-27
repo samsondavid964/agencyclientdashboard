@@ -30,9 +30,11 @@ export interface HomepageInsights {
 }
 
 /**
- * Fetches a single client by ID.
+ * Fetches a single client by ID. Wrapped in React.cache so generateMetadata
+ * and the page component can both call it within the same request without
+ * issuing two Supabase round-trips.
  */
-export async function getClientById(id: string): Promise<Client | null> {
+export const getClientById = cache(async (id: string): Promise<Client | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("clients")
@@ -46,7 +48,7 @@ export async function getClientById(id: string): Promise<Client | null> {
   }
 
   return data as Client | null;
-}
+});
 
 interface HomepageClientParams {
   date: string; // YYYY-MM-DD

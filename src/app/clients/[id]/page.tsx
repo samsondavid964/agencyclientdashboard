@@ -6,6 +6,7 @@ import { getAuthenticatedUser, isAdmin } from "@/lib/utils/auth";
 import { getClientById, getClientHistoryDays } from "@/lib/queries/clients";
 import { INSUFFICIENT_HISTORY_DAYS } from "@/lib/utils/health-score";
 import { getMTDRevenue } from "@/lib/queries/metrics";
+import { hasLatestWeeklyReport } from "@/lib/queries/reports";
 import {
   getClientHealthTrend,
   getClientMetricsTable,
@@ -103,29 +104,30 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
     metricsDays = resolvedRange;
   }
 
+  const client = await getClientById(id);
+  if (!client) {
+    notFound();
+  }
+
   const [
-    client,
     healthTrend,
     metricsTable,
     mtdRevenue,
     historyDays,
     anomalies,
     forecast,
+    hasReport,
   ] = await Promise.all([
-    getClientById(id),
     getClientHealthTrend(id, selectedDate, 30),
     getClientMetricsTable(id, selectedDate, metricsDays),
     getMTDRevenue(id, selectedDate),
     getClientHistoryDays(id, selectedDate),
     getMetricsForAnomalyDetection(id, selectedDate, 30),
     getBudgetForecast(id, selectedDate),
+    hasLatestWeeklyReport(client).catch(() => false),
   ]);
 
   const hasSufficientHistory = historyDays >= INSUFFICIENT_HISTORY_DAYS;
-
-  if (!client) {
-    notFound();
-  }
 
   const userEmail = user.email ?? null;
   const canWriteWorkspace =
@@ -159,6 +161,7 @@ export default async function ClientDetailPage({ params, searchParams }: Props) 
         selectedDate={selectedDate}
         rangeDays={rangeDays}
         customStart={customStart}
+        hasReport={hasReport}
       >
         <EditClientDialog client={client} />
         <StatusChangeDropdown

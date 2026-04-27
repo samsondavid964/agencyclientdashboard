@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ClipboardCopy,
   ExternalLink,
+  FileText,
   ShoppingBag,
   Store,
 } from "lucide-react";
@@ -25,6 +26,7 @@ interface TopBarProps {
   selectedDate: string;
   rangeDays: number | null;
   customStart: string | null;
+  hasReport: boolean;
   children?: React.ReactNode; // Slot for admin action buttons
 }
 
@@ -59,6 +61,7 @@ export function TopBar({
   selectedDate,
   rangeDays,
   customStart,
+  hasReport,
   children,
 }: TopBarProps) {
   const router = useRouter();
@@ -182,6 +185,19 @@ export function TopBar({
                 Google Ads
               </Button>
             </a>
+            {hasReport && (
+              <Link
+                href={`/clients/${client.id}/report`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View latest weekly report in a new tab"
+              >
+                <Button variant="outline" size="sm" className="gap-1.5 h-9">
+                  <FileText className="h-3.5 w-3.5" />
+                  Latest report
+                </Button>
+              </Link>
+            )}
             {client.gmc_id && (
               <a
                 href={`https://merchants.google.com/mc/overview?a=${client.gmc_id}`}
